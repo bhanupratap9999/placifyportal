@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 const AuthContext = createContext();
 
@@ -16,8 +17,6 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
-    const API_URL = 'http://localhost:5000/api';
 
     // Check if user is logged in on mount
     useEffect(() => {
@@ -89,14 +88,14 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (email, password) => {
+    const login = async (email, password, userType = 'student') => {
         try {
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password, userType })
             });
 
             const data = await response.json();

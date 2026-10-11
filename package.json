@@ -1,0 +1,14 @@
+{
+  "name": "placify-suite",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run start\" \"npm --prefix frontend25 run dev -- --host 0.0.0.0 --port 5173\"",
+    "start": "npm run dev",
+    "backend": "npm --prefix backend run start",
+    "frontend": "npm --prefix frontend25 run dev -- --host 0.0.0.0 --port 5173"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

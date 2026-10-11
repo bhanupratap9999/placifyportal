@@ -5,6 +5,7 @@ import { Moon, Sun, Megaphone, Users, Newspaper, Target, Phone, MapPin, FileText
 import io from 'socket.io-client';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE, toApiUrl, toAssetUrl } from '../config';
 
 
 
@@ -177,7 +178,7 @@ export default function CompanyDashboard() {
   const fetchNewsletters = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/newsletters/company/my-newsletters', {
+      const response = await fetch(`${API_BASE}/api/newsletters/company/my-newsletters`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -196,7 +197,7 @@ export default function CompanyDashboard() {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/courses/company/my-courses', {
+      const response = await fetch(`${API_BASE}/api/courses/company/my-courses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -215,7 +216,7 @@ export default function CompanyDashboard() {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/notifications', {
+      const response = await fetch(`${API_BASE}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -235,7 +236,7 @@ export default function CompanyDashboard() {
   const markAsRead = async (notificationId) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      await fetch(`${API_BASE}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -261,7 +262,7 @@ export default function CompanyDashboard() {
     
     // Define socket logic to use in conditional block
     const setupSocket = () => {
-        socketRef.current = io('http://localhost:5000');
+        socketRef.current = io(API_BASE);
         
         socketRef.current.on('connect', () => {
           socketRef.current.emit('register', userId);
@@ -375,8 +376,8 @@ export default function CompanyDashboard() {
       const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(s => s);
       
       const url = editingInternship 
-        ? `http://localhost:5000/api/internships/${editingInternship._id}`
-        : 'http://localhost:5000/api/internships';
+        ? `${API_BASE}/api/internships/${editingInternship._id}`
+        : `${API_BASE}/api/internships`;
       
       const method = editingInternship ? 'PUT' : 'POST';
       
@@ -442,7 +443,7 @@ export default function CompanyDashboard() {
       if (editingCourseId && removeVideos && removeVideos.length > 0) {
         data.append('removeVideos', JSON.stringify(removeVideos));
       }
-      const url = editingCourseId ? `http://localhost:5000/api/courses/${editingCourseId}` : 'http://localhost:5000/api/courses';
+      const url = editingCourseId ? `${API_BASE}/api/courses/${editingCourseId}` : `${API_BASE}/api/courses`;
       const method = editingCourseId ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -491,7 +492,7 @@ export default function CompanyDashboard() {
     if (!selectedInternship || !selectedApplicant) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/internships/${selectedInternship._id}/applicants/${selectedApplicant._id}/status`, {
+      const res = await fetch(`${API_BASE}/api/internships/${selectedInternship._id}/applicants/${selectedApplicant._id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -526,7 +527,7 @@ export default function CompanyDashboard() {
       const studentId = typeof student === 'string' ? student : (student && (student._id || student.id));
       if (!studentId) return alert('Student ID not available');
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/profile/student/${studentId}/resume`, {
+      const res = await fetch(`${API_BASE}/api/profile/student/${studentId}/resume`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -624,7 +625,7 @@ export default function CompanyDashboard() {
       try {
         const token = localStorage.getItem('token');
         if (!studentId) return;
-        const res = await fetch(`http://localhost:5000/api/profile/student/${studentId}`, {
+        const res = await fetch(`${API_BASE}/api/profile/student/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) return;
@@ -1208,7 +1209,7 @@ export default function CompanyDashboard() {
                   onClick={async () => {
                     try {
                       const token = localStorage.getItem('token');
-                      await fetch('http://localhost:5000/api/notifications/mark-all-read', {
+                      await fetch(`${API_BASE}/api/notifications/mark-all-read`, {
                         method: 'PUT',
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
@@ -1286,7 +1287,7 @@ export default function CompanyDashboard() {
                             try {
                               const token = localStorage.getItem('token');
                               const { internshipId } = microtaskAssigning;
-                              const resp = await fetch(`http://localhost:5000/api/internships/${internshipId}/microtasks/generate`, {
+                              const resp = await fetch(`${API_BASE}/api/internships/${internshipId}/microtasks/generate`, {
                                 method: 'POST',
                                 headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
                                 body: JSON.stringify({ questionCount })
@@ -1394,7 +1395,7 @@ export default function CompanyDashboard() {
                 const token = localStorage.getItem('token');
                 if (editingNewsletterId) {
                   // Update
-                  const resp = await fetch(`http://localhost:5000/api/newsletters/${editingNewsletterId}`, {
+                  const resp = await fetch(`${API_BASE}/api/newsletters/${editingNewsletterId}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
@@ -1414,7 +1415,7 @@ export default function CompanyDashboard() {
                   }
                 } else {
                   // Create
-                  const resp = await fetch('http://localhost:5000/api/newsletters', {
+                  const resp = await fetch(`${API_BASE}/api/newsletters`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -1455,7 +1456,7 @@ export default function CompanyDashboard() {
                     setGeneratingAI(true);
                     try {
                       const token = localStorage.getItem('token');
-                      const resp = await fetch('http://localhost:5000/api/newsletters/generate', {
+                      const resp = await fetch(`${API_BASE}/api/newsletters/generate`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
                         body: JSON.stringify({ prompt: nwPrompt })
@@ -2340,7 +2341,7 @@ function EnrolledStudentsList({ courseId }) {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/courses/${courseId}/enrolled`, {
+        const res = await fetch(`${API_BASE}/api/courses/${courseId}/enrolled`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();

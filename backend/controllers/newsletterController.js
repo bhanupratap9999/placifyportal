@@ -43,15 +43,28 @@ exports.generateNewsletterFromPrompt = async (req, res) => {
             }
         }
 
+        // Models may wrap JSON in markdown fences even when asked for JSON only.
+        const cleanedText = text
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+
         // Try to parse JSON from text
         let parsed = null;
-        try { parsed = JSON.parse(text); } catch (e) {
-            const start = text.indexOf('{');
-            const end = text.lastIndexOf('}');
+        try { parsed = JSON.parse(cleanedText); } catch (e) {
+            const start = cleanedText.indexOf('{');
+            const end = cleanedText.lastIndexOf('}');
             if (start !== -1 && end !== -1) {
-                const sub = text.substring(start, end + 1);
+                const sub = cleanedText.substring(start, end + 1);
                 try { parsed = JSON.parse(sub); } catch (e2) { parsed = null; }
             }
+        }
+
+        if (parsed && typeof parsed === 'object') {
+            parsed.title = typeof parsed.title === 'string' ? parsed.title.trim() : '';
+            parsed.summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
+            parsed.content = typeof parsed.content === 'string' ? parsed.content.trim() : '';
+            if (!parsed.title || !parsed.summary || !parsed.content) parsed = null;
         }
 
         // If parsing failed, create a minimal fallback using the prompt

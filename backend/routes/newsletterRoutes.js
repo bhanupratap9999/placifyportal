@@ -13,7 +13,9 @@ const { protect } = require('../middleware/auth');
 
 // Public routes
 router.get('/', getAllNewsletters);
-router.get('/:id', getNewsletter);
+
+// Company specific routes must be registered before the dynamic :id route.
+router.get('/company/my-newsletters', protect, getCompanyNewsletters);
 
 // Protected routes
 router.post('/', protect, createNewsletter);
@@ -21,7 +23,6 @@ router.post('/generate', protect, generateNewsletterFromPrompt);
 router.put('/:id', protect, updateNewsletter);
 router.delete('/:id', protect, deleteNewsletter);
 
-// Company specific routes
-router.get('/company/my-newsletters', protect, getCompanyNewsletters);
+router.get('/:id', getNewsletter);
 
 module.exports = router;

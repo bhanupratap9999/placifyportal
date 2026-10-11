@@ -13,6 +13,8 @@ const images = [
 
 export default function LoginPage() {
   const [index, setIndex] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [userType, setUserType] = useState("student");
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -92,7 +94,7 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password, userType);
 
     if (!result.success) {
       setError(result.message || "Login failed");
@@ -119,6 +121,26 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 mb-2">Login as</p>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F3EDFF] p-1">
+                <button
+                  type="button"
+                  onClick={() => setUserType('student')}
+                  className={`py-2 rounded-lg text-sm font-semibold transition ${userType === 'student' ? 'bg-[#443097] text-white shadow-md' : 'text-[#443097]'}`}
+                >
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserType('company')}
+                  className={`py-2 rounded-lg text-sm font-semibold transition ${userType === 'company' ? 'bg-[#443097] text-white shadow-md' : 'text-[#443097]'}`}
+                >
+                  Company
+                </button>
+              </div>
+            </div>
+
             <div className="relative">
               <img
                 src={emailImg}
@@ -126,12 +148,12 @@ export default function LoginPage() {
                 className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2"
               />
               <input
-                type="email"
+                type="text"
                 name="email"
-                placeholder="Email"
+                placeholder="Email or Username"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[1cm]"
+                className="w-full px-10 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] h-[1cm]"
               />
             </div>
 
@@ -142,13 +164,20 @@ export default function LoginPage() {
                 className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2"
               />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[1cm]"
+                className="w-full px-10 pr-12 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] h-[1cm]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#443097]"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
 
             <button 

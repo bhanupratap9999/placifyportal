@@ -15,6 +15,7 @@ const images = [
 export default function SignUpPage() {
   const [index, setIndex] = useState(0);
   const [userType, setUserType] = useState("student");
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -178,7 +179,7 @@ export default function SignUpPage() {
                 placeholder={userType === "company" ? "Company Name" : "Full Name"}
                 value={formData.fullName}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[0.9cm]"
+                className="w-full px-10 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] h-[0.9cm]"
               />
             </div>
 
@@ -194,7 +195,7 @@ export default function SignUpPage() {
                 placeholder="Username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[0.9cm]"
+                className="w-full px-10 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] h-[0.9cm]"
               />
             </div>
 
@@ -210,7 +211,7 @@ export default function SignUpPage() {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[0.9cm]"
+                className="w-full px-10 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] shadow-sm h-[0.9cm]"
               />
             </div>
 
@@ -221,13 +222,20 @@ export default function SignUpPage() {
                 className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2"
               />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-10 py-3 bg-[#F3EDFF] rounded-xl outline-none h-[0.9cm]"
+                className="w-full px-10 pr-12 py-3 bg-[#F3EDFF] text-[#1f2937] placeholder:text-gray-500 border border-[#d9d0ff] rounded-xl outline-none focus:border-[#443097] focus:ring-2 focus:ring-[#d9d0ff] h-[0.9cm]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#443097]"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
 
             <button 

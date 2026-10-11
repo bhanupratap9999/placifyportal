@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
+import { API_BASE } from '../config'
 
 export default function CreateNewsletter() {
   const [theme, setTheme] = useState('light')
@@ -21,7 +22,7 @@ export default function CreateNewsletter() {
     setSubmitting(true)
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('http://localhost:5000/api/newsletters', {
+      const res = await fetch(`${API_BASE}/api/newsletters`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

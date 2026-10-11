@@ -124,8 +124,8 @@ exports.signup = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        console.log('Login request:', { email, password });
+        const { email, password, userType } = req.body;
+        console.log('Login request:', { email, password, userType });
 
         // Validate input
         if (!email || !password) {
@@ -136,17 +136,22 @@ exports.login = async (req, res) => {
         }
 
         let user;
+        const loginIdentifier = (email || '').trim();
 
         // Check if using mock database
         if (isUsingMockDB()) {
             const mockDb = getDB();
             console.log('Using mock DB for login');
-            user = await mockDb.users.findOne({ email });
-            console.log('Found user:', user ? { _id: user._id, email: user.email, password: user.password } : null);
+            user = await mockDb.users.findOne({
+                $or: [{ email: loginIdentifier }, { username: loginIdentifier }]
+            });
+            console.log('Found user:', user ? { _id: user._id, email: user.email, username: user.username, password: user.password } : null);
         } else {
-            // Find user by email using MongoDB
-            user = await User.findOne({ email });
-            console.log('Found user in MongoDB:', user ? { _id: user._id, email: user.email } : null);
+            // Find user by email or username using MongoDB
+            user = await User.findOne({
+                $or: [{ email: loginIdentifier }, { username: loginIdentifier }]
+            });
+            console.log('Found user in MongoDB:', user ? { _id: user._id, email: user.email, username: user.username } : null);
         }
 
         if (!user) {
@@ -154,6 +159,16 @@ exports.login = async (req, res) => {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
+            });
+        }
+
+        const selectedType = (userType || '').toLowerCase();
+        const userRole = (user.userType || '').toLowerCase();
+
+        if (selectedType && selectedType !== userRole) {
+            return res.status(401).json({
+                success: false,
+                message: `This account is registered as a ${userRole}. Please select the correct login type.`
             });
         }
 
