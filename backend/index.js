@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 const http = require('http');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -19,6 +21,9 @@ const courseRoutes = require('./routes/courseRoutes');
 const app = express();
 const server = http.createServer(app);
 const production = process.env.NODE_ENV === 'production';
+if (production) {
+    app.set('trust proxy', 1);
+}
 const localOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
@@ -54,12 +59,24 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Middleware
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many authentication attempts. Try again later.' }
+});
+app.use('/api/auth', authLimiter);
 
 // Serve only profile images; resumes and course videos use protected routes.
 app.use('/uploads/profile-pictures', express.static(getUploadDirectory('profile-pictures'), {
