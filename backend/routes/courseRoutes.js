@@ -4,21 +4,33 @@ const multer = require('multer');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
+const crypto = require('crypto');
 const Course = require('../models/Course');
 const { protect, restrictTo } = require('../middleware/auth');
+const { getUploadDirectory, getUploadPath } = require('../config/uploads');
 
 const router = express.Router();
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads', 'course-videos');
-fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = getUploadDirectory('course-videos');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+  filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`)
 });
 
-const upload = multer({ storage });
+const allowedVideoExtensions = new Set(['.mp4', '.mov', '.webm']);
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024, files: 5 },
+  fileFilter: (req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (file.mimetype.startsWith('video/') && allowedVideoExtensions.has(extension)) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only MP4, MOV, and WebM videos are allowed'));
+  }
+});
 
 // Create course (company only) - accepts multiple files under field name 'courseVideos'
 router.post('/', protect, restrictTo('company'), upload.array('courseVideos'), async (req, res) => {
@@ -67,33 +79,6 @@ router.post('/', protect, restrictTo('company'), upload.array('courseVideos'), a
   }
 });
 
-// DEBUG: temporary seed route to create a published course (unauthenticated)
-// Use this only for local testing; remove when done.
-router.post('/debug/seed-course', async (req, res) => {
-  try {
-    const sample = {
-      name: req.body.name || 'Seeded Course',
-      description: req.body.description || 'This is a seeded published course for testing.',
-      category: req.body.category || 'Development',
-      duration: req.body.duration || '4 weeks',
-      price: req.body.price || 'Free',
-      isPublished: true,
-      prerequisites: req.body.prerequisites || '',
-      companyId: null,
-      companyName: req.body.companyName || 'Seed Company',
-      videos: req.body.videoUrls ? (Array.isArray(req.body.videoUrls) ? req.body.videoUrls : JSON.parse(req.body.videoUrls || '[]')) : [],
-    };
-
-    const course = await Course.create(sample);
-    try { const io = req.app.get('io'); if (io) io.emit('newCourse', course); } catch (e) { console.warn('emit newCourse failed', e.message); }
-    console.log('Seeded course created:', course._id);
-    res.status(201).json({ success: true, course, seeded: true });
-  } catch (err) {
-    console.error('Seed course error:', err);
-    res.status(500).json({ success: false, message: 'Failed to seed course' });
-  }
-});
-
 // Update course (company only) - accepts additional files under 'courseVideos' and a JSON 'removeVideos' array
 router.put('/:id', protect, restrictTo('company'), upload.array('courseVideos'), async (req, res) => {
   try {
@@ -117,7 +102,8 @@ router.put('/:id', protect, restrictTo('company'), upload.array('courseVideos'),
     // Attempt to delete removed files from disk (best effort)
     for (const r of removeVideos) {
       try {
-        const filePath = path.join(__dirname, '..', r.replace(/^\/+/,''));
+        if (!r.startsWith('/uploads/course-videos/')) continue;
+        const filePath = getUploadPath('course-videos', path.basename(r));
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       } catch (err) {
         console.warn('Failed to delete file', r, err.message);
@@ -252,8 +238,10 @@ router.get('/:id/video/:index', protect, async (req, res) => {
     }
 
     // Otherwise treat as a local file path (may be stored like /uploads/course-videos/filename)
-    const rel = videoPath.replace(/^\/+/, '');
-    const abs = path.join(__dirname, '..', rel);
+    if (!videoPath.startsWith('/uploads/course-videos/')) {
+      return res.status(404).json({ success: false, message: 'Video path is invalid' });
+    }
+    const abs = getUploadPath('course-videos', path.basename(videoPath));
 
     if (!fs.existsSync(abs)) return res.status(404).json({ success: false, message: 'File not found on disk' });
 

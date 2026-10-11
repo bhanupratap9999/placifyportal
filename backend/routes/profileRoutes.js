@@ -16,11 +16,12 @@ const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const multer = require('multer');
 const path = require('path');
+const { getUploadDirectory } = require('../config/uploads');
 
 // Profile picture upload configuration
 const pictureStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/profile-pictures/');
+        cb(null, getUploadDirectory('profile-pictures'));
     },
     filename: (req, file, cb) => {
         const uniqueName = `${req.user.id}_${Date.now()}${path.extname(file.originalname)}`;

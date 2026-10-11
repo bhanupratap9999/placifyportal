@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
-const dns = require('dns');
-
-// Override default DNS servers to bypass Node.js querySrv ECONNREFUSED bug on Windows
-dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 let dbConnection = { connected: false, usesMock: false };
 let mongoServer = null;
 
 const connectDB = async () => {
+    const production = process.env.NODE_ENV === 'production';
+    if (production && !process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is required in production');
+    }
+
     try {
         // Attempt to connect using the configured MONGODB_URI
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
@@ -21,6 +22,10 @@ const connectDB = async () => {
         return true;
     } catch (error) {
         console.error(`❌ MongoDB Connection Error: ${error.message}`);
+
+        if (production) {
+            throw new Error(`MongoDB connection failed: ${error.message}`, { cause: error });
+        }
         
         // Dynamic fallback to mongodb-memory-server
         try {

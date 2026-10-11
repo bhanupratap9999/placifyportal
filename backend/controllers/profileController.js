@@ -5,6 +5,7 @@ const fsSync = require('fs');
 const PDFDocument = require('pdfkit');
 const { parseCV } = require('../utils/cvParser');
 const fetch = global.fetch || require('node-fetch');
+const { getUploadPath } = require('../config/uploads');
 
 // @desc    Upload resume
 // @route   POST /api/profile/student/upload-resume
@@ -35,7 +36,7 @@ exports.uploadResume = async (req, res) => {
         let extractedData = null;
         if (req.file.mimetype === 'application/pdf') {
             try {
-                const absolutePath = path.join(__dirname, '..', 'uploads', 'resumes', req.file.filename);
+                const absolutePath = getUploadPath('resumes', req.file.filename);
                 console.log('Parsing CV from:', absolutePath);
                 
                 extractedData = await parseCV(absolutePath);
@@ -118,9 +119,8 @@ exports.deleteResume = async (req, res) => {
         const resumePath = user.profile.resume;
 
         // Delete file from filesystem if it exists
-        if (resumePath) {
-            const fs = require('fs');
-            const fullPath = path.join(__dirname, '..', resumePath.replace(/^\//, ''));
+        if (resumePath?.startsWith('/uploads/resumes/')) {
+            const fullPath = getUploadPath('resumes', path.basename(resumePath));
             
             try {
                 if (fs.existsSync(fullPath)) {
@@ -173,9 +173,9 @@ exports.uploadProfilePicture = async (req, res) => {
         }
 
         // Delete old profile picture if exists
-        if (user.profile.profilePicture) {
+        if (user.profile.profilePicture?.startsWith('/uploads/profile-pictures/')) {
             try {
-                const oldFilePath = path.join(__dirname, '..', user.profile.profilePicture);
+            const oldFilePath = getUploadPath('profile-pictures', path.basename(user.profile.profilePicture));
                 await fs.unlink(oldFilePath);
                 console.log('Deleted old profile picture:', oldFilePath);
             } catch (err) {
@@ -292,8 +292,8 @@ exports.getStudentResumePdf = async (req, res) => {
         const resumeText = user.profile?.resumeText || null;
 
         // If resume file exists on disk, force a download of the original file
-        if (resumePath) {
-            const localPath = path.join(__dirname, '..', resumePath.replace(/^\/+/, ''));
+        if (resumePath?.startsWith('/uploads/resumes/')) {
+            const localPath = getUploadPath('resumes', path.basename(resumePath));
             if (fsSync.existsSync(localPath)) {
                 // Use res.download to set appropriate headers so browsers download the file
                 const filename = path.basename(localPath);

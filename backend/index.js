@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
+const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 require('dotenv').config();
 const { connectDB, isUsingMockDB } = require('./config/db');
+const { getUploadDirectory } = require('./config/uploads');
 const seedUsers = require('./seedUsers');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -15,9 +18,30 @@ const courseRoutes = require('./routes/courseRoutes');
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = process.env.FRONTEND_URL
-    ? [process.env.FRONTEND_URL, 'http://localhost:5174', 'http://localhost:5173', 'http://127.0.0.1:5174', 'http://127.0.0.1:5173']
-    : ['http://localhost:5174', 'http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5174', 'http://127.0.0.1:5173'];
+const production = process.env.NODE_ENV === 'production';
+const localOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174'
+];
+const frontendOrigin = process.env.FRONTEND_URL ? new URL(process.env.FRONTEND_URL).origin : null;
+
+if (production) {
+    const missing = ['JWT_SECRET', 'MONGODB_URI', 'FRONTEND_URL', 'UPLOADS_DIR']
+        .filter((name) => !process.env[name]);
+    if (missing.length) {
+        throw new Error(`Missing required production environment variables: ${missing.join(', ')}`);
+    }
+    if (new URL(process.env.FRONTEND_URL).protocol !== 'https:') {
+        throw new Error('FRONTEND_URL must use HTTPS in production');
+    }
+}
+
+const allowedOrigins = production
+    ? [frontendOrigin]
+    : [...new Set([...localOrigins, ...(frontendOrigin ? [frontendOrigin] : [])])];
 
 const io = new Server(server, {
     cors: {
@@ -29,14 +53,6 @@ const io = new Server(server, {
 // Make io accessible to routes
 app.set('io', io);
 
-// Connect to MongoDB (or use mock DB if MongoDB is unavailable)
-connectDB();
-
-// Seed mock database with test users if using mock DB
-if (isUsingMockDB()) {
-    seedUsers();
-}
-
 // Middleware
 app.use(cors({
     origin: allowedOrigins,
@@ -45,12 +61,20 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+// Serve only profile images; resumes and course videos use protected routes.
+app.use('/uploads/profile-pictures', express.static(getUploadDirectory('profile-pictures'), {
+    dotfiles: 'deny',
+    index: false,
+    maxAge: '1d'
+}));
 
 // Routes
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Project25 API' });
+});
+app.get('/health', (req, res) => {
+    const databaseReady = mongoose.connection.readyState === 1 || isUsingMockDB();
+    res.status(databaseReady ? 200 : 503).json({ status: databaseReady ? 'ok' : 'unavailable' });
 });
 
 // Auth routes
@@ -83,7 +107,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ 
         success: false, 
         message: 'Server error', 
-        error: err.message 
+        ...(production ? {} : { error: err.message })
     });
 });
 
@@ -116,8 +140,19 @@ io.on('connection', (socket) => {
 // Export connectedUsers for use in controllers
 app.set('connectedUsers', connectedUsers);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+const startServer = async () => {
+    await connectDB();
+    if (!production && isUsingMockDB()) {
+        await seedUsers();
+    }
+
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+};
+
+startServer().catch((error) => {
+    console.error('Server startup failed:', error.message);
+    process.exit(1);
 });
