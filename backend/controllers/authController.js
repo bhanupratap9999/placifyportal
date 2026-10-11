@@ -125,7 +125,7 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password, userType } = req.body;
-        console.log('Login request:', { email, password, userType });
+        console.log('Login request:', { email, userType });
 
         // Validate input
         if (!email || !password) {
@@ -145,7 +145,7 @@ exports.login = async (req, res) => {
             user = await mockDb.users.findOne({
                 $or: [{ email: loginIdentifier }, { username: loginIdentifier }]
             });
-            console.log('Found user:', user ? { _id: user._id, email: user.email, username: user.username, password: user.password } : null);
+            console.log('Found user:', user ? { _id: user._id, email: user.email, username: user.username } : null);
         } else {
             // Find user by email or username using MongoDB
             user = await User.findOne({
