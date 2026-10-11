@@ -251,19 +251,14 @@ export default function SignUpPage() {
             Sign up with Others
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div className="mt-4 space-y-3">
             <div id="g_id_signup"></div>
-            {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-              <div className="mt-2 text-xs text-yellow-600">Set VITE_GOOGLE_CLIENT_ID in your frontend env to enable Google signup.</div>
-            )}
-
-            <p className="text-center">
-                Already have an account?{" "}
-                <Link to="/login" className=" text-[#2b128f] font-semibold">
+            <p className="text-center font-semibold text-gray-600">
+              Already have an account?{" "}
+              <Link to="/login" className="text-[#2b128f] font-semibold hover:underline">
                 Login
-                </Link>
+              </Link>
             </p>
-
           </div>
         </div>
 

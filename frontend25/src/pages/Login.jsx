@@ -194,26 +194,14 @@ export default function LoginPage() {
           </form>
 
 
-          <div className="text-center mt-4 font-semibold">
-            <Link to="/signup" className="text-[#2b128f] hover:underline">
-              Sign up
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            <div>
-              <div id="g_id_signin"></div>
-              {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-                <div className="mt-2 text-xs text-yellow-600">Set VITE_GOOGLE_CLIENT_ID in your frontend env to enable Google login.</div>
-              )}
+          <div className="mt-4 space-y-3">
+            <div id="g_id_signin"></div>
+            <div className="text-center font-semibold text-gray-600">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-[#2b128f] font-semibold hover:underline">
+                Sign Up
+              </Link>
             </div>
-          <div className="text-center mt-5 font-semibold text-gray-600">
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-[#2b128f] font-semibold">
-              Sign Up
-            </Link>
-          </div>
-
           </div>
         </div>
 
