@@ -194,8 +194,10 @@ export default function LoginPage() {
           </form>
 
 
-          <div className="text-center mt-4 font-semibold text-gray-600">
-            Login with Others
+          <div className="text-center mt-4 font-semibold">
+            <Link to="/signup" className="text-[#2b128f] hover:underline">
+              Sign up
+            </Link>
           </div>
 
           <div className="mt-6 space-y-4">

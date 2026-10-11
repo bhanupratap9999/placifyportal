@@ -1,10 +1,14 @@
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
+
+const resumeDirectory = path.join(__dirname, '..', 'uploads', 'resumes');
+fs.mkdirSync(resumeDirectory, { recursive: true });
 
 // Configure storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/resumes/'); // Store in uploads/resumes folder
+        cb(null, resumeDirectory);
     },
     filename: (req, file, cb) => {
         // Create unique filename: userId_timestamp_originalname

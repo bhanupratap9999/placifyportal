@@ -40,13 +40,7 @@ exports.uploadResume = async (req, res) => {
                 
                 extractedData = await parseCV(absolutePath);
 
-                console.log('========== CV SCAN RESULTS ==========');
-                console.log('Raw Text Length:', extractedData.rawText?.length);
-                console.log('Raw Text Preview:', extractedData.rawText?.substring(0, 500));
-                console.log('Skills Found:', extractedData.skills);
-                console.log('Education Found:', extractedData.education);
-                console.log('Bio Found:', extractedData.bio);
-                console.log('====================================');
+                console.log('Resume parsed; extracted text length:', extractedData.rawText?.length);
 
                 // Store the raw text from CV
                 if (extractedData.rawText) {
@@ -66,7 +60,7 @@ exports.uploadResume = async (req, res) => {
                         )
                     );
                     user.profile.skills = [...existingSkills, ...newSkills];
-                    console.log('Skills updated:', user.profile.skills);
+                    console.log('Resume skills updated:', newSkills.length);
                 }
 
                 // Skip education updates - user wants to manage qualifications manually
@@ -87,19 +81,7 @@ exports.uploadResume = async (req, res) => {
 
         await user.save();
 
-        console.log('========== SAVED TO DATABASE ==========');
-        console.log('User ID:', user._id);
-        console.log('Resume Path:', user.profile.resume);
-        console.log('Resume Text Length:', user.profile.resumeText?.length);
-        console.log('Resume Text Preview (first 500 chars):', user.profile.resumeText?.substring(0, 500));
-        console.log('Resume Text Full Content:', user.profile.resumeText);
-        console.log('Skills Count:', user.profile.skills?.length);
-        console.log('Skills:', user.profile.skills);
-        console.log('Education Count:', user.profile.education?.length);
-        console.log('Education:', user.profile.education);
-        console.log('Bio:', user.profile.bio);
-        console.log('Full Name:', user.profile.fullName);
-        console.log('=======================================');
+        console.log('Resume saved for user:', user._id);
 
         res.status(200).json({
             success: true,
@@ -674,7 +656,7 @@ exports.compareJDWithResume = async (req, res) => {
             return res.status(500).json({ success: false, message: 'Gemini API key not configured on server (set GEMINI_API_KEY)' });
         }
 
-        const model = process.env.GEMINI_MODEL || 'text-bison-001';
+        const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
         const prompt = `You are an expert career coach. Compare the candidate's resume against the job description and produce:
 1) A concise comparison paragraph (2-4 sentences) summarizing fit.
 2) Two short lists prefixed with headings "What's good:" and "What to improve:" with 3-6 brief bullet points each.
@@ -719,7 +701,7 @@ Resume:\n${resumeText}\n\nJob Description:\n${jdText}\n\nRespond in plain text.`
             if (GoogleGenAI) {
                 const ai = new GoogleGenAI({ apiKey: geminiKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
+                    model,
                     contents: requestPrompt,
                     config: { temperature: 0.2 }
                 });

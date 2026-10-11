@@ -11,23 +11,12 @@ async function parseCV(filePath) {
     try {
         const dataBuffer = await fs.readFile(filePath);
         
-        console.log('=== BEFORE PDF PARSE ===');
-        console.log('Buffer length:', dataBuffer.length);
-        console.log('========================');
-        
         // Parse PDF using PDFParse class
         const pdfParser = new PDFParse({ data: dataBuffer });
         const result = await pdfParser.getText();
         const text = result.text;
 
-        console.log('=== PDF PARSER DEBUG ===');
-        console.log('Text extracted from PDF:', text ? 'YES' : 'NO');
-        console.log('Text length:', text?.length);
-        console.log('Text type:', typeof text);
-        console.log('========================');
-        console.log('FULL PDF TEXT:');
-        console.log(text);
-        console.log('========================');
+        console.log('CV text extracted:', Boolean(text), 'length:', text?.length);
 
         // Extract information
         const extractedData = {
@@ -36,11 +25,6 @@ async function parseCV(filePath) {
             education: extractEducation(text),
             bio: extractBio(text)
         };
-
-        console.log('=== EXTRACTED DATA DEBUG ===');
-        console.log('rawText in object:', extractedData.rawText ? 'EXISTS' : 'UNDEFINED');
-        console.log('rawText length in object:', extractedData.rawText?.length);
-        console.log('============================');
 
         return extractedData;
     } catch (error) {

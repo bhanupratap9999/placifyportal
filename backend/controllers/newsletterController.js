@@ -3,44 +3,37 @@ const Newsletter = require('../models/Newsletter');
 // AI-based newsletter generation from a prompt
 exports.generateNewsletterFromPrompt = async (req, res) => {
     try {
-        const { prompt, apiKey } = req.body;
+        const { prompt } = req.body;
 
         if (!prompt || prompt.trim().length === 0) {
             return res.status(400).json({ success: false, message: 'Prompt is required' });
         }
 
-        const effectiveKey = apiKey || process.env.GEMINI_API_KEY;
-        let text = '';
+        const effectiveKey = process.env.GEMINI_API_KEY;
+        if (!effectiveKey) {
+            return res.status(500).json({ success: false, message: 'Gemini API key is not configured on the server' });
+        }
 
+        const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
         const systemPrompt = `You are an assistant that creates concise, student-facing newsletters for a company. Given a user's prompt, return a JSON object with keys: title (short, <= 100 chars), summary (short <= 200 chars), content (HTML string with paragraphs and simple markup). Respond ONLY with valid JSON.`;
+        const requestPrompt = `${systemPrompt}\n\nUser prompt: ${prompt}`;
+        let text;
 
-        if (effectiveKey) {
-            try {
-                let GoogleGenAI;
-                try { GoogleGenAI = require('@google/genai').GoogleGenAI; } catch (e) { GoogleGenAI = null; }
-
-                const requestPrompt = `${systemPrompt}\n\nUser prompt: ${prompt}`;
-
-                if (GoogleGenAI) {
-                    const ai = new GoogleGenAI({ apiKey: effectiveKey });
-                    const response = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: requestPrompt,
-                        config: { temperature: 0.3 }
-                    });
-                    text = response?.text || '';
-                } else {
-                    const url = `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=${effectiveKey}`;
-                    const fetchBody = { prompt: { text: requestPrompt }, temperature: 0.3, maxOutputTokens: 1024 };
-                    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fetchBody) });
-                    const json = await resp.json();
-                    if (json.candidates && json.candidates[0] && json.candidates[0].content) text = json.candidates[0].content;
-                    else if (json.output && json.output[0] && json.output[0].content) text = json.output[0].content;
-                    else if (typeof json.result === 'string') text = json.result;
-                }
-            } catch (aiErr) {
-                console.error('AI generation error:', aiErr);
-            }
+        try {
+            const { GoogleGenAI } = require('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: effectiveKey });
+            const response = await ai.models.generateContent({
+                model,
+                contents: requestPrompt,
+                config: { temperature: 0.3, responseMimeType: 'application/json' }
+            });
+            text = response?.text || '';
+        } catch (aiErr) {
+            console.error('Gemini newsletter generation failed:', aiErr.message);
+            return res.status(aiErr.status === 503 ? 503 : 502).json({
+                success: false,
+                message: 'Gemini could not generate the newsletter. Please try again.'
+            });
         }
 
         // Models may wrap JSON in markdown fences even when asked for JSON only.
@@ -67,13 +60,8 @@ exports.generateNewsletterFromPrompt = async (req, res) => {
             if (!parsed.title || !parsed.summary || !parsed.content) parsed = null;
         }
 
-        // If parsing failed, create a minimal fallback using the prompt
         if (!parsed) {
-            parsed = {
-                title: (prompt.length > 60 ? prompt.slice(0, 57) + '...' : `Newsletter: ${prompt.slice(0, 60)}`),
-                summary: prompt.slice(0, 180),
-                content: `<p>${prompt.replace(/\n/g, '<br/>')}</p>`
-            };
+            return res.status(502).json({ success: false, message: 'Gemini returned an invalid newsletter. Please try again.' });
         }
 
         res.status(200).json({ success: true, newsletter: parsed });

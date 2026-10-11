@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Globe, Users, MapPin, Phone, Mail, Edit2, Save, X, FileText } from 'lucide-react';
+import { API_BASE, toAssetUrl } from '../config';
 
 export default function CompanyProfile() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function CompanyProfile() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/profile/company', {
+      const response = await fetch(`${API_BASE}/api/profile/company`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -15,7 +15,7 @@ const generateToken = (userId) => {
 // @access  Public
 exports.signup = async (req, res) => {
     try {
-        console.log('Signup request received:', req.body);
+        console.log('Signup request received');
         const { username, email, password, userType, profile } = req.body;
 
         // Validate required fields
@@ -145,17 +145,17 @@ exports.login = async (req, res) => {
             user = await mockDb.users.findOne({
                 $or: [{ email: loginIdentifier }, { username: loginIdentifier }]
             });
-            console.log('Found user:', user ? { _id: user._id, email: user.email, username: user.username } : null);
+            console.log('User lookup completed in mock DB:', Boolean(user));
         } else {
             // Find user by email or username using MongoDB
             user = await User.findOne({
                 $or: [{ email: loginIdentifier }, { username: loginIdentifier }]
             });
-            console.log('Found user in MongoDB:', user ? { _id: user._id, email: user.email, username: user.username } : null);
+            console.log('User lookup completed in MongoDB:', Boolean(user));
         }
 
         if (!user) {
-            console.log('User not found with email:', email);
+            console.log('User not found');
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'

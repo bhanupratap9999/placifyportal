@@ -5,7 +5,7 @@ import { Moon, Sun, Megaphone, Users, Newspaper, Target, Phone, MapPin, FileText
 import io from 'socket.io-client';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
-import { API_BASE, toApiUrl, toAssetUrl } from '../config';
+import { API_BASE, toAssetUrl } from '../config';
 
 
 
@@ -125,7 +125,7 @@ export default function CompanyDashboard() {
   const fetchInternships = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/internships/company/my-internships', {
+      const response = await fetch(`${API_BASE}/api/internships/company/my-internships`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -144,7 +144,7 @@ export default function CompanyDashboard() {
   const fetchApplicants = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/internships/company/my-internships', {
+      const response = await fetch(`${API_BASE}/api/internships/company/my-internships`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1355,7 +1355,7 @@ export default function CompanyDashboard() {
                       const { internshipId, studentId } = microtaskAssigning;
                       const body = { title: microtaskForm.title, type: microtaskForm.type, instructions: microtaskForm.instructions, assignedTo: studentId, dueDate: microtaskForm.dueDate };
                       if (microtaskForm.type === 'quiz' && microtaskQuestions.length > 0) body.quizQuestions = microtaskQuestions;
-                      const resp = await fetch(`http://localhost:5000/api/internships/${internshipId}/microtasks`, {
+                      const resp = await fetch(`${API_BASE}/api/internships/${internshipId}/microtasks`, {
                         method: 'POST',
                         headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify(body)
@@ -1824,7 +1824,7 @@ export default function CompanyDashboard() {
                         </button>
                         {applicant.studentId?.profile?.resume && (
                           <a
-                            href={`http://localhost:5000${applicant.studentId.profile.resume}`}
+                            href={toAssetUrl(applicant.studentId.profile.resume)}
                             target="_blank"
                             rel="noopener noreferrer"
                             download
@@ -1889,7 +1889,7 @@ export default function CompanyDashboard() {
               {selectedCourseDetails.videos && selectedCourseDetails.videos.length > 0 ? (
                 <ul className="list-disc list-inside text-sm mt-2">
                   {selectedCourseDetails.videos.map((v, i) => (
-                    <li key={i}><a href={`http://localhost:5000${v}`} target="_blank" rel="noreferrer" className="text-blue-600 underline">{`Video ${i+1}`}</a></li>
+                    <li key={i}><a href={toAssetUrl(v)} target="_blank" rel="noreferrer" className="text-blue-600 underline">{`Video ${i+1}`}</a></li>
                   ))}
                 </ul>
               ) : (
@@ -1959,7 +1959,7 @@ export default function CompanyDashboard() {
               {(selectedApplicant.studentId?.profile?.resume || selectedApplicant.studentId?.profile?.resumePath || selectedApplicant.studentId?.profile?.resumeText) && (
                 (() => {
                   const r = (selectedApplicant.studentId.profile.resume || selectedApplicant.studentId.profile.resumePath || '');
-                  const href = r && r.startsWith('http') ? r : (r ? `http://localhost:5000/${r.replace(/^\/+/, '')}` : null);
+                  const href = toAssetUrl(r);
                   const resumeText = selectedApplicant.studentId?.profile?.resumeText || null;
                   return (
                     <div className="border-t pt-4">
@@ -2037,7 +2037,7 @@ export default function CompanyDashboard() {
                           try {
                             const token = localStorage.getItem('token');
                             const { internshipId } = microtaskAssigning;
-                            const resp = await fetch(`http://localhost:5000/api/internships/${internshipId}/microtasks/generate`, {
+                            const resp = await fetch(`${API_BASE}/api/internships/${internshipId}/microtasks/generate`, {
                               method: 'POST',
                               headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
                               body: JSON.stringify({ questionCount })
@@ -2105,7 +2105,7 @@ export default function CompanyDashboard() {
                     const { internshipId, studentId } = microtaskAssigning;
                     const body = { title: microtaskForm.title, type: microtaskForm.type, instructions: microtaskForm.instructions, assignedTo: studentId, dueDate: microtaskForm.dueDate };
                     if (microtaskForm.type === 'quiz' && microtaskQuestions.length > 0) body.quizQuestions = microtaskQuestions;
-                    const resp = await fetch(`http://localhost:5000/api/internships/${internshipId}/microtasks`, {
+                    const resp = await fetch(`${API_BASE}/api/internships/${internshipId}/microtasks`, {
                       method: 'POST',
                       headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
                       body: JSON.stringify(body)
@@ -2375,7 +2375,7 @@ function EnrolledStudentsList({ courseId }) {
               <div className="text-xs text-slate-600">{s.email || ''}{s.phone ? ` · ${s.phone}` : ''}</div>
             </div>
             {s.resume ? (
-              <a href={s.resume.startsWith('http') ? s.resume : `http://localhost:5000/${s.resume.replace(/^\/+/, '')}`} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">View CV</a>
+              <a href={toAssetUrl(s.resume)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">View CV</a>
             ) : (
               <></>
             )}
