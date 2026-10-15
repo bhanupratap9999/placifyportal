@@ -17,6 +17,7 @@ const microtaskRoutes = require('./routes/microtaskRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,8 +116,8 @@ app.use('/api/notifications', notificationRoutes);
 // Course routes
 app.use('/api/courses', courseRoutes);
 
-// Course routes (disabled - file not present)
-// app.use('/api/courses', courseRoutes);
+// Payment routes (Razorpay)
+app.use('/api/payment', paymentRoutes);
 
 // Error handling middleware (must be after routes)
 app.use((err, req, res, next) => {

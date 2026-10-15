@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { API_BASE } from '../config';
+import { initiateRazorpayPayment } from '../utils/razorpay';
+import PaymentSuccessModal from '../component/PaymentSuccessModal';
 
 /* =====================================================
    MOCK LOGIN (ROLE SELECTION)
@@ -177,13 +179,15 @@ function CompanyCreateCourse({ theme }) {
 }
 
 /* =====================================================
-   STUDENT: VIEW & ENROLL COURSES
+   STUDENT: VIEW & ENROLL COURSES (WITH RAZORPAY)
 ===================================================== */
 function StudentCourses({ theme }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCourseId, setOpenCourseId] = useState(null);
   const [videoBlobs, setVideoBlobs] = useState({}); // { courseId: [objectUrl,...] }
+  const [processingCourseId, setProcessingCourseId] = useState(null);
+  const [successPayment, setSuccessPayment] = useState(null);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState(() => {
     try {
       const raw = localStorage.getItem('enrolledCourses');
@@ -253,12 +257,13 @@ function StudentCourses({ theme }) {
     };
   }, [openCourseId]);
 
-  const enroll = async (courseId) => {
+  const enrollFree = async (courseId) => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return alert('Please login as a student to enroll');
 
     try {
+      setProcessingCourseId(courseId);
       const res = await fetch(`${API_BASE}/api/courses/${courseId}/enroll`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -266,20 +271,63 @@ function StudentCourses({ theme }) {
       const body = await res.json();
       if (!res.ok) return alert(body.message || 'Failed to enroll');
 
-      // update local UI
       setCourses(prev => prev.map(c => c._id === courseId ? { ...c, enrolledStudents: [...(c.enrolledStudents||[]), userId] } : c));
-      // open the course so the student immediately gets access
       setOpenCourseId(courseId);
-      // persist enrollment locally so button shows 'View' across reloads
       setEnrolledCourseIds(prev => {
         const next = Array.from(new Set([...(prev||[]), courseId]));
         try { localStorage.setItem('enrolledCourses', JSON.stringify(next)); } catch (e) { /* ignore */ }
         return next;
       });
-      alert('Enrolled successfully');
+      alert('🎉 Enrolled successfully in the course!');
     } catch (err) {
       console.error('Enroll error:', err);
       alert('Failed to enroll');
+    } finally {
+      setProcessingCourseId(null);
+    }
+  };
+
+  const handleEnrollOrBuy = async (course) => {
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+    if (!token || !userId) {
+      alert('Please log in as a student to enroll');
+      return;
+    }
+
+    const price = (course.price || '').trim();
+    const isFree = !price || price.toLowerCase() === 'free' || price === '0';
+
+    if (isFree) {
+      await enrollFree(course._id);
+    } else {
+      // Trigger Razorpay Checkout
+      setProcessingCourseId(course._id);
+      await initiateRazorpayPayment({
+        itemType: 'course',
+        itemId: course._id,
+        notes: {
+          courseName: course.name
+        },
+        onSuccess: (verifyData) => {
+          setProcessingCourseId(null);
+          setSuccessPayment(verifyData);
+          setCourses(prev => prev.map(c => c._id === course._id ? { ...c, enrolledStudents: [...(c.enrolledStudents||[]), userId] } : c));
+          setOpenCourseId(course._id);
+          setEnrolledCourseIds(prev => {
+            const next = Array.from(new Set([...(prev||[]), course._id]));
+            try { localStorage.setItem('enrolledCourses', JSON.stringify(next)); } catch (e) {}
+            return next;
+          });
+        },
+        onError: (err) => {
+          setProcessingCourseId(null);
+          alert(err.message || 'Payment was not completed');
+        },
+        onClose: () => {
+          setProcessingCourseId(null);
+        }
+      });
     }
   };
 
@@ -294,57 +342,110 @@ function StudentCourses({ theme }) {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-2xl font-semibold mb-6">Available Courses</h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold">Available Courses</h2>
+          <p className="text-sm text-slate-500">Master high-demand tech skills with instant Razorpay checkout</p>
+        </div>
+      </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {courses.map((course) => {
           const enrolledServer = (course.enrolledStudents || []).some(id => id.toString() === userId);
           const enrolledLocal = enrolledCourseIds.includes(course._id);
           const enrolled = enrolledServer || enrolledLocal;
           const opened = openCourseId === course._id;
+          const price = (course.price || '').trim();
+          const isFree = !price || price.toLowerCase() === 'free' || price === '0';
+          const isProcessing = processingCourseId === course._id;
+
           return (
             <div
               key={course._id}
-              className={`border rounded-xl p-4 shadow-sm ${cardTheme}`}
+              className={`border rounded-xl p-5 shadow-sm transition-all hover:shadow-md flex flex-col justify-between ${cardTheme}`}
             >
-              <h3 className="font-semibold">{course.name}</h3>
-              <p className="text-sm text-[#443097]">{course.companyName || 'Company'}</p>
-              <p className="text-xs mt-2">{course.description}</p>
-              <p className="text-xs mt-1">Duration: {course.duration}</p>
-
-              {/* only show videos to enrolled students */}
-              {enrolled && opened && course.videos && course.videos.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm font-medium">Videos:</p>
-                  <ul className="text-xs list-disc list-inside">
-                    {course.videos.map((url, idx) => (
-                      <li key={idx} className="mb-3">
-                        {videoBlobs[course._id] && videoBlobs[course._id][idx] ? (
-                          <video controls className="w-full max-h-60 rounded" src={videoBlobs[course._id][idx]}>
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : (
-                          <span className="text-sm text-slate-500">Loading video {idx + 1}...</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-semibold text-lg">{course.name}</h3>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                    enrolled 
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                      : isFree 
+                      ? 'bg-green-100 text-green-700 border border-green-300' 
+                      : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  }`}>
+                    {enrolled ? 'Enrolled' : (price || 'Free')}
+                  </span>
                 </div>
-              )}
 
-              <button
-                onClick={() => {
-                  if (enrolled) return setOpenCourseId(opened ? null : course._id);
-                  enroll(course._id);
-                }}
-                className={`mt-3 w-full py-1.5 rounded-lg text-sm ${enrolled ? 'bg-[#0ea5a2] text-white' : 'bg-[#443097] text-white'}`}
-              >
-                {enrolled ? (opened ? 'Close Course' : 'View Course') : 'Enroll'}
-              </button>
+                <p className="text-sm font-medium text-[#443097] mb-2">{course.companyName || 'Verified Partner'}</p>
+                <p className="text-xs text-slate-600 line-clamp-3 mb-3">{course.description}</p>
+                
+                <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                  <span>⏱ {course.duration || 'Self-paced'}</span>
+                  <span>📚 {course.category || 'All levels'}</span>
+                </div>
+
+                {/* Videos for enrolled students */}
+                {enrolled && opened && course.videos && course.videos.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-sm font-medium mb-2">Course Lecture Videos:</p>
+                    <ul className="text-xs list-disc list-inside space-y-3">
+                      {course.videos.map((url, idx) => (
+                        <li key={idx} className="list-none">
+                          {videoBlobs[course._id] && videoBlobs[course._id][idx] ? (
+                            <video controls className="w-full max-h-60 rounded-lg shadow-sm" src={videoBlobs[course._id][idx]}>
+                              Your browser does not support the video tag.
+                            </video>
+                          ) : (
+                            <div className="p-3 rounded bg-slate-100 text-slate-500 text-center text-xs">
+                              Loading video {idx + 1}...
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <button
+                  disabled={isProcessing}
+                  onClick={() => {
+                    if (enrolled) return setOpenCourseId(opened ? null : course._id);
+                    handleEnrollOrBuy(course);
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    enrolled 
+                      ? 'bg-[#0ea5a2] hover:bg-[#0b8f86] text-white shadow-sm' 
+                      : isFree 
+                      ? 'bg-[#443097] hover:bg-[#36217c] text-white' 
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-600/20'
+                  }`}
+                >
+                  {isProcessing ? (
+                    'Processing Razorpay...'
+                  ) : enrolled ? (
+                    opened ? 'Close Course' : 'View Course Content'
+                  ) : isFree ? (
+                    'Enroll Free'
+                  ) : (
+                    `Buy with Razorpay (${price})`
+                  )}
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Payment Success Confirmation Modal */}
+      <PaymentSuccessModal
+        isOpen={Boolean(successPayment)}
+        onClose={() => setSuccessPayment(null)}
+        paymentData={successPayment}
+      />
     </div>
   );
 }

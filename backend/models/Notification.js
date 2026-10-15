@@ -8,7 +8,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['application', 'status_update', 'message', 'new_internship'],
+        enum: ['application', 'status_update', 'message', 'new_internship', 'payment', 'course_enrollment'],
         required: true
     },
     title: {
@@ -22,6 +22,14 @@ const notificationSchema = new mongoose.Schema({
     relatedInternship: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Internship'
+    },
+    relatedCourse: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course'
+    },
+    relatedPayment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Payment'
     },
     relatedStudent: {
         type: mongoose.Schema.Types.ObjectId,

@@ -28,6 +28,18 @@ const userSchema = new mongoose.Schema({
         enum: ['student', 'company'],
         lowercase: true
     },
+    isProMember: {
+        type: Boolean,
+        default: false
+    },
+    proPlan: {
+        type: String,
+        default: null
+    },
+    proSubscriptionExpiresAt: {
+        type: Date,
+        default: null
+    },
     profile: {
         // Common fields
         fullName: {
