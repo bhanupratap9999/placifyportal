@@ -1,14 +1,16 @@
 import { motion, useScroll } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { 
     Check, Star, Monitor, BarChart3, Palette, Microscope, 
     Smartphone, Scale, Heart, GraduationCap, ChevronRight, 
-    ArrowRight, Search, MapPin, Users, Award, ShieldCheck, Zap 
+    ArrowRight, Search, MapPin, Users, Award, ShieldCheck, Zap, Crown 
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import PricingModal from '../component/PricingModal'
 
 export default function Landing() {
     const navigate = useNavigate();
+    const [isPricingOpen, setIsPricingOpen] = useState(false);
     const ref = useRef(null)
     const { scrollYProgress } = useScroll({
         target: ref,
@@ -469,6 +471,121 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Dedicated Pricing Section */}
+            <section className="py-20 px-6 relative z-10 border-t border-white/[0.04]">
+                <div className="max-w-6xl mx-auto text-center">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={fadeInUp}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold mb-4"
+                    >
+                        <Crown className="w-3.5 h-3.5 text-yellow-400" />
+                        Transparent Career Acceleration Plans
+                    </motion.div>
+                    <motion.h2 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={fadeInUp}
+                        className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4"
+                    >
+                        Invest in Your Future with <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Pro Pass</span>
+                    </motion.h2>
+                    <motion.p
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={fadeInUp}
+                        className="text-sm md:text-base text-slate-400 max-w-xl mx-auto mb-12"
+                    >
+                        Backed by Razorpay secure instant transactions. Level up your placement vector.
+                    </motion.p>
+
+                    <div className="grid md:grid-cols-3 gap-6 text-left">
+                        {/* Free Tier */}
+                        <div className="p-8 rounded-3xl bg-slate-900/60 border border-white/10 flex flex-col justify-between backdrop-blur-xl hover:border-white/20 transition-all">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1">Starter</h3>
+                                <p className="text-xs text-slate-400 mb-4">Core tools to browse and explore careers.</p>
+                                <div className="flex items-baseline gap-1 mb-6">
+                                    <span className="text-4xl font-extrabold text-white">₹0</span>
+                                    <span className="text-xs text-slate-400">/ forever</span>
+                                </div>
+                                <ul className="space-y-3 text-xs text-slate-300 mb-8">
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Browse 10,000+ internship openings</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Apply to up to 5 opportunities/month</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Standard student candidate profile</li>
+                                </ul>
+                            </div>
+                            <button
+                                onClick={() => navigate('/signup')}
+                                className="w-full py-3 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors"
+                            >
+                                Get Started Free
+                            </button>
+                        </div>
+
+                        {/* Pro Pass (Featured) */}
+                        <div className="relative p-8 rounded-3xl bg-gradient-to-b from-purple-950/60 via-slate-900/90 to-indigo-950/60 border-2 border-purple-500/60 flex flex-col justify-between backdrop-blur-xl shadow-2xl shadow-purple-600/25 scale-[1.02]">
+                            <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+                                Most Popular ⭐
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-xl font-bold text-white">Placify Pro Pass</h3>
+                                    <Crown className="w-4 h-4 text-yellow-400" />
+                                </div>
+                                <p className="text-xs text-purple-300 mb-4">Complete career boost & placement vector.</p>
+                                <div className="flex items-baseline gap-2 mb-6">
+                                    <span className="text-4xl font-extrabold text-white">₹999</span>
+                                    <span className="text-xs text-slate-400 line-through">₹2,499</span>
+                                    <span className="text-xs text-emerald-400 font-semibold">Lifetime access</span>
+                                </div>
+                                <ul className="space-y-3 text-xs text-slate-200 mb-8">
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> <strong>Unlimited</strong> verified internship applications</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Verified Candidate Profile Badge ⭐</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Full access to all Premium Video Courses</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> AI Resume Score & JD Match Optimizer</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Priority placement dispatch with Razorpay invoice</li>
+                                </ul>
+                            </div>
+                            <button
+                                onClick={() => setIsPricingOpen(true)}
+                                className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/40 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Zap className="w-4 h-4" />
+                                Unlock Pro Pass Now
+                            </button>
+                        </div>
+
+                        {/* Pro Monthly */}
+                        <div className="p-8 rounded-3xl bg-slate-900/60 border border-white/10 flex flex-col justify-between backdrop-blur-xl hover:border-white/20 transition-all">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1">Pro Monthly</h3>
+                                <p className="text-xs text-slate-400 mb-4">Flexible monthly billing for active seekers.</p>
+                                <div className="flex items-baseline gap-1 mb-6">
+                                    <span className="text-4xl font-extrabold text-white">₹299</span>
+                                    <span className="text-xs text-slate-400">/ month</span>
+                                </div>
+                                <ul className="space-y-3 text-xs text-slate-300 mb-8">
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> All Pro features included</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Priority customer support</li>
+                                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Cancel anytime with zero fees</li>
+                                </ul>
+                            </div>
+                            <button
+                                onClick={() => setIsPricingOpen(true)}
+                                className="w-full py-3 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors"
+                            >
+                                Subscribe Monthly
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Interactive Call to Action (CTA) Section */}
             <section className="py-24 px-6 relative z-10">
                 <div className="max-w-5xl mx-auto">
@@ -539,6 +656,12 @@ export default function Landing() {
                     </div>
                 </div>
             </footer>
+
+            {/* Pricing Modal */}
+            <PricingModal
+                isOpen={isPricingOpen}
+                onClose={() => setIsPricingOpen(false)}
+            />
         </div>
     )
 }
